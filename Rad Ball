@@ -1,0 +1,134 @@
+// Get the canvas element and context
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Set canvas size
+canvas.width = 800;
+canvas.height = 400;
+
+// Game variables
+let ballRadius = 20;
+let ballX = 50;
+let ballY = canvas.height - ballRadius;
+let ballSpeedX = 5;
+let ballSpeedY = 0;
+let gravity = 0.5;
+let jumpPower = -12;
+let isJumping = false;
+
+// Platform
+const platformHeight = 20;
+const platforms = [
+  { x: 0, y: canvas.height - platformHeight, width: canvas.width, height: platformHeight }
+];
+
+// Key state
+let keys = {
+  right: false,
+  left: false,
+  up: false
+};
+
+// Draw the ball
+function drawBall() {
+  ctx.beginPath();
+  ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+  ctx.fillStyle = "red";
+  ctx.fill();
+  ctx.closePath();
+}
+
+// Draw the platforms
+function drawPlatforms() {
+  platforms.forEach(platform => {
+    ctx.fillStyle = "#654321"; // Brown color
+    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+  });
+}
+
+// Update ball position
+function updateBallPosition() {
+  if (keys.right) {
+    ballX += ballSpeedX;
+  }
+  if (keys.left) {
+    ballX -= ballSpeedX;
+  }
+
+  // Gravity effect
+  if (ballY + ballRadius < canvas.height - platformHeight) {
+    ballSpeedY += gravity; // Apply gravity
+  } else {
+    ballY = canvas.height - platformHeight - ballRadius;
+    if (isJumping) {
+      ballSpeedY = jumpPower;
+      isJumping = false;
+    } else {
+      ballSpeedY = 0;
+    }
+  }
+  
+  ballY += ballSpeedY;
+
+  // Prevent the ball from moving out of the canvas
+  if (ballX < ballRadius) {
+    ballX = ballRadius;
+  }
+  if (ballX > canvas.width - ballRadius) {
+    ballX = canvas.width - ballRadius;
+  }
+
+  // Check for collisions with the platform
+  platforms.forEach(platform => {
+    if (
+      ballY + ballRadius > platform.y &&
+      ballY + ballRadius < platform.y + platformHeight &&
+      ballX > platform.x &&
+      ballX < platform.x + platform.width
+    ) {
+      ballY = platform.y - ballRadius; // Place the ball on top of the platform
+      ballSpeedY = 0;
+      isJumping = false;
+    }
+  });
+}
+
+// Event listeners for user input
+document.addEventListener("keydown", function(event) {
+  if (event.key === "ArrowRight" || event.key === "d") {
+    keys.right = true;
+  }
+  if (event.key === "ArrowLeft" || event.key === "a") {
+    keys.left = true;
+  }
+  if (event.key === "ArrowUp" || event.key === " " && !isJumping) {
+    keys.up = true;
+    isJumping = true;
+  }
+});
+
+document.addEventListener("keyup", function(event) {
+  if (event.key === "ArrowRight" || event.key === "d") {
+    keys.right = false;
+  }
+  if (event.key === "ArrowLeft" || event.key === "a") {
+    keys.left = false;
+  }
+  if (event.key === "ArrowUp" || event.key === " ") {
+    keys.up = false;
+  }
+});
+
+// Main game loop
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+
+  drawBall();
+  drawPlatforms();
+  updateBallPosition();
+
+  requestAnimationFrame(gameLoop); // Recursively call the game loop
+}
+
+// Start the game
+gameLoop();
